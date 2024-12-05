@@ -1,1 +1,2 @@
 # diffusion_based_segmentation
+最新进度：diff_based_seg_pipeline.py与ensemble.py已编写完毕
