@@ -21,7 +21,7 @@
 # --------------------------------------------------------------------------
 
 
-from .base_depth_dataset import BaseDepthDataset, DepthFileNameMode
+from .base_seg_dataset import BaseDepthDataset, DepthFileNameMode
 
 
 class HypersimDataset(BaseDepthDataset):

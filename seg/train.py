@@ -33,7 +33,7 @@ from torch.utils.data import ConcatDataset, DataLoader
 from tqdm import tqdm
 
 from marigold.marigold_pipeline import MarigoldPipeline
-from src.dataset import BaseDepthDataset, DatasetMode, get_dataset
+from src.dataset import BaseSegDataset, DatasetMode, get_dataset
 from src.dataset.mixed_sampler import MixedBatchSampler
 from src.trainer import get_trainer_cls
 from src.util.config_util import (
@@ -250,10 +250,12 @@ if "__main__" == __name__:
         loader_generator = torch.Generator().manual_seed(loader_seed)
 
     # Training dataset
-    depth_transform: DepthNormalizerBase = get_depth_normalizer(
-        cfg_normalizer=cfg.depth_normalization
-    )
-    train_dataset: BaseDepthDataset = get_dataset( # 修改BaseDepthDataset
+        # 不需要对分割数据进行归一化
+        # depth_transform: DepthNormalizerBase = get_depth_normalizer( 
+        #     cfg_normalizer=cfg.depth_normalization
+        # )
+
+    train_dataset: BaseSegDataset = get_dataset( # 修改BaseDepthDataset （已修改）
         cfg_data.train,
         base_data_dir=base_data_dir,
         mode=DatasetMode.TRAIN,
@@ -267,7 +269,7 @@ if "__main__" == __name__:
             dataset_ls
         ), "Lengths don't match: `prob_ls` and `dataset_list`"
         concat_dataset = ConcatDataset(dataset_ls)
-        mixed_sampler = MixedBatchSampler( # 修改MixedBatchSampler
+        mixed_sampler = MixedBatchSampler( # 修改MixedBatchSampler(finished)
             src_dataset_ls=dataset_ls,
             batch_size=cfg.dataloader.max_train_batch_size,
             drop_last=True,

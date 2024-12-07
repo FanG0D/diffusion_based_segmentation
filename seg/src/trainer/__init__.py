@@ -1,11 +1,11 @@
 # Author: Bingxin Ke
 # Last modified: 2024-05-17
 
-from .marigold_trainer import MarigoldTrainer
+from .diff_based_seg_trainer import DiffBasedSegTrainer
 
 
 trainer_cls_name_dict = {
-    "MarigoldTrainer": MarigoldTrainer,
+    "DiffBasedSegTrainer": DiffBasedSegTrainer,
 }
 
 

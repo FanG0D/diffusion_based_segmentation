@@ -20,7 +20,7 @@
 # More information about the method can be found at https://marigoldmonodepth.github.io
 # --------------------------------------------------------------------------
 
-from .base_depth_dataset import BaseDepthDataset, DepthFileNameMode
+from .base_seg_dataset import BaseDepthDataset, DepthFileNameMode
 
 
 class ScanNetDataset(BaseDepthDataset):

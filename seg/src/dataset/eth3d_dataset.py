@@ -25,7 +25,7 @@ import tarfile
 import os
 import numpy as np
 
-from .base_depth_dataset import BaseDepthDataset, DepthFileNameMode
+from .base_seg_dataset import BaseDepthDataset, DepthFileNameMode
 
 
 class ETH3DDataset(BaseDepthDataset):

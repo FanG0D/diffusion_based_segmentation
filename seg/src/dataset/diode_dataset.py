@@ -27,7 +27,7 @@ from io import BytesIO
 import numpy as np
 import torch
 
-from .base_depth_dataset import BaseDepthDataset, DepthFileNameMode, DatasetMode
+from .base_seg_dataset import BaseDepthDataset, DepthFileNameMode, DatasetMode
 
 
 class DIODEDataset(BaseDepthDataset):
