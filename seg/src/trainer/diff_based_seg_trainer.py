@@ -40,7 +40,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from PIL import Image
 
-from diff_based_seg.diff_based_seg_pipeline import DiffBasedSegPipeline, DiffBasedSegDepthOutput
+from diff_based_seg.diff_based_seg_pipeline import DiffBasedSegPipeline, DiffBasedSegOutput
 
 # 这里的都修改
 from src.util import metric
@@ -100,18 +100,18 @@ class DiffBasedSegTrainer:
 
         # Optimizer !should be defined after input layer is adapted
         lr = self.cfg.lr
-        self.optimizer = Adam(self.model.unet.parameters(), lr=lr) # 修改函数
+        self.optimizer = Adam(self.model.unet.parameters(), lr=lr) 
 
         # LR scheduler
-        lr_func = IterExponential(
+        lr_func = IterExponential(      # 修改函数(finished)
             total_iter_length=self.cfg.lr_scheduler.kwargs.total_iter,
             final_ratio=self.cfg.lr_scheduler.kwargs.final_ratio,
             warmup_steps=self.cfg.lr_scheduler.kwargs.warmup_steps,
         )
-        self.lr_scheduler = LambdaLR(optimizer=self.optimizer, lr_lambda=lr_func) # 修改函数
+        self.lr_scheduler = LambdaLR(optimizer=self.optimizer, lr_lambda=lr_func) 
 
         # Loss
-        self.loss = get_loss(loss_name=self.cfg.loss.name, **self.cfg.loss.kwargs) # 修改函数
+        self.loss = get_loss(loss_name=self.cfg.loss.name, **self.cfg.loss.kwargs) # 修改函数！！
 
         # Training noise scheduler
         self.training_noise_scheduler: DDPMScheduler = DDPMScheduler.from_pretrained(
@@ -131,7 +131,7 @@ class DiffBasedSegTrainer:
 
         # Eval metrics
         self.metric_funcs = [getattr(metric, _met) for _met in cfg.eval.eval_metrics]
-        self.train_metrics = MetricTracker(*["loss"])
+        self.train_metrics = MetricTracker(*["loss"])# 修改函数(finished)
         self.val_metrics = MetricTracker(*[m.__name__ for m in self.metric_funcs])
         # main metric for best checkpoint saving
         self.main_val_metric = cfg.validation.main_val_metric
@@ -145,8 +145,8 @@ class DiffBasedSegTrainer:
         self.max_epoch = self.cfg.max_epoch
         self.max_iter = self.cfg.max_iter
         self.gradient_accumulation_steps = accumulation_steps
-        self.gt_depth_type = self.cfg.gt_depth_type
-        self.gt_mask_type = self.cfg.gt_mask_type
+        self.gt_seg_type = self.cfg.gt_seg_type     # 修改yaml
+        # self.gt_mask_type = self.cfg.gt_mask_type      # 修改yaml
         self.save_period = self.cfg.trainer.save_period
         self.backup_period = self.cfg.trainer.backup_period
         self.val_period = self.cfg.trainer.validation_period
@@ -168,10 +168,12 @@ class DiffBasedSegTrainer:
         self.in_evaluation = False
         self.global_seed_sequence: List = []  # consistent global seed sequence, used to seed random generator, to ensure consistency when resuming
 
+    # 修改函数！！！！(好像不用改)
     def _replace_unet_conv_in(self):
         # replace the first layer to accept 8 in_channels
-        _weight = self.model.unet.conv_in.weight.clone()  # [320, 4, 3, 3]
+        _weight = self.model.unet.conv_in.weight.clone()  # [320, 4, 3, 3] 4是特征通道数
         _bias = self.model.unet.conv_in.bias.clone()  # [320]
+
         _weight = _weight.repeat((1, 2, 1, 1))  # Keep selected channel(s)
         # half the activation magnitude
         _weight *= 0.5
@@ -209,7 +211,7 @@ class DiffBasedSegTrainer:
             logging.debug(f"epoch: {self.epoch}")
 
             # Skip previous batches when resume
-            for batch in skip_first_batches(self.train_loader, self.n_batch_in_epoch):
+            for batch in skip_first_batches(self.train_loader, self.n_batch_in_epoch): # 修改函数(finished)
                 self.model.unet.train()
 
                 # globally consistent random generators
@@ -224,26 +226,26 @@ class DiffBasedSegTrainer:
 
                 # Get data
                 rgb = batch["rgb_norm"].to(device)
-                depth_gt_for_latent = batch[self.gt_depth_type].to(device)
+                seg_gt_for_latent = batch[self.gt_seg_type].to(device)
 
-                if self.gt_mask_type is not None:
-                    valid_mask_for_latent = batch[self.gt_mask_type].to(device)
-                    invalid_mask = ~valid_mask_for_latent
-                    valid_mask_down = ~torch.max_pool2d(
-                        invalid_mask.float(), 8, 8
-                    ).bool()
-                    valid_mask_down = valid_mask_down.repeat((1, 4, 1, 1))
-                else:
-                    raise NotImplementedError
+                # if self.gt_mask_type is not None:
+                #     valid_mask_for_latent = batch[self.gt_mask_type].to(device)
+                #     invalid_mask = ~valid_mask_for_latent
+                #     valid_mask_down = ~torch.max_pool2d(
+                #         invalid_mask.float(), 8, 8
+                #     ).bool()
+                #     valid_mask_down = valid_mask_down.repeat((1, 4, 1, 1))
+                # else:
+                #     raise NotImplementedError
 
                 batch_size = rgb.shape[0]
 
                 with torch.no_grad():
                     # Encode image
                     rgb_latent = self.model.encode_rgb(rgb)  # [B, 4, h, w]
-                    # Encode GT depth
-                    gt_depth_latent = self.encode_depth(
-                        depth_gt_for_latent
+                    # Encode GT SEG maskiage
+                    gt_seg_latent = self.encode_seg(
+                        seg_gt_for_latent
                     )  # [B, 4, h, w]
 
                 # Sample a random timestep for each image
@@ -261,8 +263,8 @@ class DiffBasedSegTrainer:
                     if self.annealed_mr_noise:
                         # calculate strength depending on t
                         strength = strength * (timesteps / self.scheduler_timesteps)
-                    noise = multi_res_noise_like(
-                        gt_depth_latent,
+                    noise = multi_res_noise_like(# 修改函数(我觉得不用改)
+                        gt_seg_latent,
                         strength=strength,
                         downscale_strategy=self.mr_noise_downscale_strategy,
                         generator=rand_num_generator,
@@ -270,14 +272,14 @@ class DiffBasedSegTrainer:
                     )
                 else:
                     noise = torch.randn(
-                        gt_depth_latent.shape,
+                        gt_seg_latent.shape,
                         device=device,
                         generator=rand_num_generator,
                     )  # [B, 4, h, w]
 
                 # Add noise to the latents (diffusion forward process)
                 noisy_latents = self.training_noise_scheduler.add_noise(
-                    gt_depth_latent, noise, timesteps
+                    gt_seg_latent, noise, timesteps
                 )  # [B, 4, h, w]
 
                 # Text embedding
@@ -285,7 +287,7 @@ class DiffBasedSegTrainer:
                     (batch_size, 1, 1)
                 )  # [B, 77, 1024]
 
-                # Concat rgb and depth latents
+                # Concat rgb and seg latents
                 cat_latents = torch.cat(
                     [rgb_latent, noisy_latents], dim=1
                 )  # [B, 8, h, w]
@@ -300,24 +302,20 @@ class DiffBasedSegTrainer:
 
                 # Get the target for loss depending on the prediction type
                 if "sample" == self.prediction_type:
-                    target = gt_depth_latent
+                    target = gt_seg_latent
                 elif "epsilon" == self.prediction_type:
                     target = noise
                 elif "v_prediction" == self.prediction_type:
                     target = self.training_noise_scheduler.get_velocity(
-                        gt_depth_latent, noise, timesteps
+                        gt_seg_latent, noise, timesteps
                     )  # [B, 4, h, w]
                 else:
                     raise ValueError(f"Unknown prediction type {self.prediction_type}")
 
-                # Masked latent loss
-                if self.gt_mask_type is not None:
-                    latent_loss = self.loss(
-                        model_pred[valid_mask_down].float(),
-                        target[valid_mask_down].float(),
-                    )
-                else:
-                    latent_loss = self.loss(model_pred.float(), target.float())
+                # 修改函数（finished）
+                # latent loss
+                
+                latent_loss = self.loss(model_pred.float(), target.float())
 
                 loss = latent_loss.mean()
 
@@ -341,7 +339,7 @@ class DiffBasedSegTrainer:
 
                     # Log to tensorboard
                     accumulated_loss = self.train_metrics.result()["loss"]
-                    tb_logger.log_dic(
+                    tb_logger.log_dic( # 修改函数(不用改)
                         {
                             f"train/{k}": v
                             for k, v in self.train_metrics.result().items()
@@ -386,21 +384,21 @@ class DiffBasedSegTrainer:
             # Epoch end
             self.n_batch_in_epoch = 0
 
-    def encode_depth(self, depth_in):
-        # stack depth into 3-channel
-        stacked = self.stack_depth_images(depth_in)
+    def encode_seg(self, seg_in):
+        # # stack depth into 3-channel
+        # stacked = self.stack_depth_images(seg_in)
         # encode using VAE encoder
-        depth_latent = self.model.encode_rgb(stacked)
-        return depth_latent
+        seg_latent = self.model.encode_rgb(seg_in)
+        return seg_latent
 
-    @staticmethod
-    def stack_depth_images(depth_in):
-        if 4 == len(depth_in.shape):
-            stacked = depth_in.repeat(1, 3, 1, 1)
-        elif 3 == len(depth_in.shape):
-            stacked = depth_in.unsqueeze(1)
-            stacked = depth_in.repeat(1, 3, 1, 1)
-        return stacked
+    # @staticmethod
+    # def stack_depth_images(depth_in):
+    #     if 4 == len(depth_in.shape):
+    #         stacked = depth_in.repeat(1, 3, 1, 1)
+    #     elif 3 == len(depth_in.shape):
+    #         stacked = depth_in.unsqueeze(1)
+    #         stacked = depth_in.repeat(1, 3, 1, 1)
+    #     return stacked
 
     def _train_step_callback(self):
         """Executed after every iteration"""
@@ -446,7 +444,7 @@ class DiffBasedSegTrainer:
                 global_step=self.effective_iter,
             )
             # save to file
-            eval_text = eval_dic_to_text(
+            eval_text = eval_dic_to_text(# 修改函数（不改）
                 val_metrics=val_metric_dic,
                 dataset_name=val_dataset_name,
                 sample_list_path=val_loader.dataset.filename_ls_path,
@@ -501,7 +499,7 @@ class DiffBasedSegTrainer:
 
         # Generate seed sequence for consistent evaluation
         val_init_seed = self.cfg.validation.init_seed
-        val_seed_ls = generate_seed_sequence(val_init_seed, len(data_loader))
+        val_seed_ls = generate_seed_sequence(val_init_seed, len(data_loader))# 修改函数（不用改）
 
         for i, batch in enumerate(
             tqdm(data_loader, desc=f"evaluating on {data_loader.dataset.disp_name}"),
@@ -510,13 +508,13 @@ class DiffBasedSegTrainer:
             assert 1 == data_loader.batch_size
             # Read input image
             rgb_int = batch["rgb_int"].squeeze()  # [3, H, W]
-            # GT depth
-            depth_raw_ts = batch["depth_raw_linear"].squeeze()
-            depth_raw = depth_raw_ts.numpy()
-            depth_raw_ts = depth_raw_ts.to(self.device)
-            valid_mask_ts = batch["valid_mask_raw"].squeeze()
-            valid_mask = valid_mask_ts.numpy()
-            valid_mask_ts = valid_mask_ts.to(self.device)
+            # GT maskiage
+            seg_raw_ts = batch["seg_raw_linear"].squeeze()
+            seg_raw = seg_raw_ts.numpy()
+            seg_raw_ts = seg_raw_ts.to(self.device)
+            # valid_mask_ts = batch["valid_mask_raw"].squeeze()
+            # valid_mask = valid_mask_ts.numpy()
+            # valid_mask_ts = valid_mask_ts.to(self.device)
 
             # Random number generator
             seed = val_seed_ls.pop()
@@ -526,8 +524,8 @@ class DiffBasedSegTrainer:
                 generator = torch.Generator(device=self.device)
                 generator.manual_seed(seed)
 
-            # Predict depth
-            pipe_out: MarigoldDepthOutput = self.model(
+            # Predict seg
+            pipe_out: DiffBasedSegOutput = self.model(
                 rgb_int,
                 denoising_steps=self.cfg.validation.denoising_steps,
                 ensemble_size=self.cfg.validation.ensemble_size,
@@ -535,41 +533,42 @@ class DiffBasedSegTrainer:
                 match_input_res=self.cfg.validation.match_input_res,
                 generator=generator,
                 batch_size=1,  # use batch size 1 to increase reproducibility
-                color_map=None,
                 show_progress_bar=False,
                 resample_method=self.cfg.validation.resample_method,
             )
 
-            depth_pred: np.ndarray = pipe_out.depth_np
+            seg_pred: np.ndarray = pipe_out.seg_np
 
-            if "least_square" == self.cfg.eval.alignment:
-                depth_pred, scale, shift = align_depth_least_square(
-                    gt_arr=depth_raw,
-                    pred_arr=depth_pred,
-                    valid_mask_arr=valid_mask,
-                    return_scale_shift=True,
-                    max_resolution=self.cfg.eval.align_max_res,
-                )
-            else:
-                raise RuntimeError(f"Unknown alignment type: {self.cfg.eval.alignment}")
+            # # 什么东西
+            # if "least_square" == self.cfg.eval.alignment:
+            #     seg_pred = align_depth_least_square(# 修改函数
+            #         gt_arr=seg_raw,
+            #         pred_arr=seg_pred,
+            #         # valid_mask_arr=valid_mask,
+            #         # return_scale_shift=True,
+            #         max_resolution=self.cfg.eval.align_max_res,
+            #     )
+            # else:
+            #     raise RuntimeError(f"Unknown alignment type: {self.cfg.eval.alignment}")
 
+            # 不用clip
             # Clip to dataset min max
-            depth_pred = np.clip(
-                depth_pred,
-                a_min=data_loader.dataset.min_depth,
-                a_max=data_loader.dataset.max_depth,
-            )
+            # depth_pred = np.clip(
+            #     depth_pred,
+            #     a_min=data_loader.dataset.min_depth,
+            #     a_max=data_loader.dataset.max_depth,
+            # )
 
-            # clip to d > 0 for evaluation
-            depth_pred = np.clip(depth_pred, a_min=1e-6, a_max=None)
+            # # clip to d > 0 for evaluation
+            # depth_pred = np.clip(depth_pred, a_min=1e-6, a_max=None)
 
             # Evaluate
             sample_metric = []
-            depth_pred_ts = torch.from_numpy(depth_pred).to(self.device)
+            seg_pred_ts = torch.from_numpy(seg_pred).to(self.device)
 
             for met_func in self.metric_funcs:
                 _metric_name = met_func.__name__
-                _metric = met_func(depth_pred_ts, depth_raw_ts, valid_mask_ts).item()
+                _metric = met_func(seg_pred_ts, seg_raw_ts).item()
                 sample_metric.append(_metric.__str__())
                 metric_tracker.update(_metric_name, _metric)
 
@@ -577,8 +576,8 @@ class DiffBasedSegTrainer:
             if save_to_dir is not None:
                 img_name = batch["rgb_relative_path"][0].replace("/", "_")
                 png_save_path = os.path.join(save_to_dir, f"{img_name}.png")
-                depth_to_save = (pipe_out.depth_np * 65535.0).astype(np.uint16)
-                Image.fromarray(depth_to_save).save(png_save_path, mode="I;16")
+                seg_to_save = (pipe_out.seg_np * 65535.0).astype(np.uint16)
+                Image.fromarray(seg_to_save).save(png_save_path, mode="I;16")
 
         return metric_tracker.result()
 

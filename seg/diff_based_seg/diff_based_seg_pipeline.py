@@ -19,7 +19,7 @@ from tqdm.auto import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
 from ..util.batchsize import find_batch_size
-# from .util.ensemble import ensemble_depth
+from ..util.ensemble import ensemble_seg
 from ..util.image_util import (
     chw2hwc,
     colorize_depth_maps,
@@ -274,13 +274,13 @@ class DiffBasedSegPipeline(DiffusionPipeline):
 
         rgb_latent = self.encode_rgb(rgb_in)
 
-        # 初始化seg map
-        seg_latent = torch.randn(
+        # 初始化maskiage latent
+        maskiage_latent = torch.randn(
             rgb_latent.shape,
             device=device,
             dtype=self.dtype,
             generator=generator,
-        )
+        )# [B, 4, h, w]
 
         if self.empty_text_embed is None:
             self.encode_empty_text()
@@ -300,21 +300,21 @@ class DiffBasedSegPipeline(DiffusionPipeline):
         
         for i, t in iterable:
             unet_input = torch.cat(
-                [rgb_latent, seg_latent], dim=1
+                [rgb_latent, maskiage_latent], dim=1
             )
 
             noise_pred = self.unet(
                 unet_input, t, encoder_hidden_states=batch_empty_text_embed
-            ).sample
+            ).sample # [B, 4, h, w]
 
-            seg_latent = self.scheduler.step(
-                noise_pred, t, seg_latent, generator=generator
+            maskiage_latent = self.scheduler.step(
+                noise_pred, t, maskiage_latent, generator=generator
             ).prev_sample
 
-        maskiage = self.decode_seg(seg_latent)
+        maskiage = self.decode_seg(maskiage_latent)
         return maskiage
 
-    def encode_seg(self, rgb_in: torch.Tensor) -> torch.Tensor:
+    def encode_rgb(self, rgb_in: torch.Tensor) -> torch.Tensor:
         """
         Encode segmentation map into latent.
         """
@@ -324,7 +324,7 @@ class DiffBasedSegPipeline(DiffusionPipeline):
         mean, logvar = torch.chunk(moments, 2, dim=1)
         # scale latent
         rgb_latent = mean * self.rgb_latent_scale_factor
-        return rgb_latent # [B, 4, H/8, W/8] 4是特征通道数
+        return rgb_latent # [B, 4, h, w]
     
     def decode_seg(self, seg_latent: torch.Tensor) -> torch.Tensor:
         """

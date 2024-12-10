@@ -4,6 +4,7 @@
 
 import pandas as pd
 import torch
+import numpy as np
 
 
 # Adapted from: https://github.com/victoresque/pytorch-template/blob/master/utils/util.py
@@ -31,128 +32,90 @@ class MetricTracker:
         return dict(self._data.average)
 
 
-def abs_relative_difference(output, target, valid_mask=None):
-    actual_output = output
-    actual_target = target
-    abs_relative_diff = torch.abs(actual_output - actual_target) / actual_target
-    if valid_mask is not None:
-        abs_relative_diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    abs_relative_diff = torch.sum(abs_relative_diff, (-1, -2)) / n
-    return abs_relative_diff.mean()
+
+def pixel_accuracy(output, target):
+    """像素准确率"""
+    with torch.no_grad():
+        output = torch.argmax(output, dim=1)
+        correct = torch.eq(output, target).int()
+        accuracy = float(correct.sum()) / float(correct.numel())
+    return accuracy
 
 
-def squared_relative_difference(output, target, valid_mask=None):
-    actual_output = output
-    actual_target = target
-    square_relative_diff = (
-        torch.pow(torch.abs(actual_output - actual_target), 2) / actual_target
-    )
-    if valid_mask is not None:
-        square_relative_diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    square_relative_diff = torch.sum(square_relative_diff, (-1, -2)) / n
-    return square_relative_diff.mean()
+def mIoU(output, target, num_classes):
+    """平均交并比"""
+    with torch.no_grad():
+        output = torch.argmax(output, dim=1)
+        intersection = torch.zeros(num_classes)
+        union = torch.zeros(num_classes)
+        
+        for cls in range(num_classes):
+            pred_mask = (output == cls)
+            target_mask = (target == cls)
+            intersection[cls] = (pred_mask & target_mask).sum()
+            union[cls] = (pred_mask | target_mask).sum()
+        
+        iou = intersection / (union + 1e-6)  # 添加小值避免除零
+        return iou.mean()
 
 
-def rmse_linear(output, target, valid_mask=None):
-    actual_output = output
-    actual_target = target
-    diff = actual_output - actual_target
-    if valid_mask is not None:
-        diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    diff2 = torch.pow(diff, 2)
-    mse = torch.sum(diff2, (-1, -2)) / n
-    rmse = torch.sqrt(mse)
-    return rmse.mean()
+# def dice_coefficient(output, target, num_classes):
+#     """Dice系数"""
+#     with torch.no_grad():
+#         output = torch.argmax(output, dim=1)
+#         dice_scores = torch.zeros(num_classes)
+        
+#         for cls in range(num_classes):
+#             pred_mask = (output == cls)
+#             target_mask = (target == cls)
+#             intersection = (pred_mask & target_mask).sum()
+#             total = pred_mask.sum() + target_mask.sum()
+#             dice_scores[cls] = 2.0 * intersection / (total + 1e-6)
+            
+#         return dice_scores.mean()
 
 
-def rmse_log(output, target, valid_mask=None):
-    diff = torch.log(output) - torch.log(target)
-    if valid_mask is not None:
-        diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    diff2 = torch.pow(diff, 2)
-    mse = torch.sum(diff2, (-1, -2)) / n  # [B]
-    rmse = torch.sqrt(mse)
-    return rmse.mean()
+def precision_recall_f1(output, target, num_classes):
+    """精确率、召回率和F1分数"""
+    with torch.no_grad():
+        output = torch.argmax(output, dim=1)
+        precision = torch.zeros(num_classes)
+        recall = torch.zeros(num_classes)
+        
+        for cls in range(num_classes):
+            pred_mask = (output == cls)
+            target_mask = (target == cls)
+            
+            tp = (pred_mask & target_mask).sum().float()
+            fp = (pred_mask & ~target_mask).sum().float()
+            fn = (~pred_mask & target_mask).sum().float()
+            
+            precision[cls] = tp / (tp + fp + 1e-6)
+            recall[cls] = tp / (tp + fn + 1e-6)
+        
+        f1 = 2 * (precision * recall) / (precision + recall + 1e-6)
+        return precision.mean(), recall.mean(), f1.mean()
 
 
-def log10(output, target, valid_mask=None):
-    if valid_mask is not None:
-        diff = torch.abs(
-            torch.log10(output[valid_mask]) - torch.log10(target[valid_mask])
-        )
-    else:
-        diff = torch.abs(torch.log10(output) - torch.log10(target))
-    return diff.mean()
-
-
-# adapt from: https://github.com/imran3180/depth-map-prediction/blob/master/main.py
-def threshold_percentage(output, target, threshold_val, valid_mask=None):
-    d1 = output / target
-    d2 = target / output
-    max_d1_d2 = torch.max(d1, d2)
-    zero = torch.zeros(*output.shape)
-    one = torch.ones(*output.shape)
-    bit_mat = torch.where(max_d1_d2.cpu() < threshold_val, one, zero)
-    if valid_mask is not None:
-        bit_mat[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    count_mat = torch.sum(bit_mat, (-1, -2))
-    threshold_mat = count_mat / n.cpu()
-    return threshold_mat.mean()
-
-
-def delta1_acc(pred, gt, valid_mask):
-    return threshold_percentage(pred, gt, 1.25, valid_mask)
-
-
-def delta2_acc(pred, gt, valid_mask):
-    return threshold_percentage(pred, gt, 1.25**2, valid_mask)
-
-
-def delta3_acc(pred, gt, valid_mask):
-    return threshold_percentage(pred, gt, 1.25**3, valid_mask)
-
-
-def i_rmse(output, target, valid_mask=None):
-    output_inv = 1.0 / output
-    target_inv = 1.0 / target
-    diff = output_inv - target_inv
-    if valid_mask is not None:
-        diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = output.shape[-1] * output.shape[-2]
-    diff2 = torch.pow(diff, 2)
-    mse = torch.sum(diff2, (-1, -2)) / n  # [B]
-    rmse = torch.sqrt(mse)
-    return rmse.mean()
-
-
-def silog_rmse(depth_pred, depth_gt, valid_mask=None):
-    diff = torch.log(depth_pred) - torch.log(depth_gt)
-    if valid_mask is not None:
-        diff[~valid_mask] = 0
-        n = valid_mask.sum((-1, -2))
-    else:
-        n = depth_gt.shape[-2] * depth_gt.shape[-1]
-
-    diff2 = torch.pow(diff, 2)
-
-    first_term = torch.sum(diff2, (-1, -2)) / n
-    second_term = torch.pow(torch.sum(diff, (-1, -2)), 2) / (n**2)
-    loss = torch.sqrt(torch.mean(first_term - second_term)) * 100
-    return loss
+def boundary_iou(output, target, num_classes, boundary_width=1):
+    """边界IoU"""
+    with torch.no_grad():
+        output = torch.argmax(output, dim=1)
+        boundary_iou_scores = torch.zeros(num_classes)
+        
+        for cls in range(num_classes):
+            pred_mask = (output == cls)
+            target_mask = (target == cls)
+            
+            # 使用形态学操作找到边界
+            from torch.nn.functional import max_pool2d
+            pred_boundary = pred_mask ^ max_pool2d(pred_mask.float(), boundary_width*2+1, 
+                                                 stride=1, padding=boundary_width)
+            target_boundary = target_mask ^ max_pool2d(target_mask.float(), boundary_width*2+1,
+                                                     stride=1, padding=boundary_width)
+            
+            intersection = (pred_boundary & target_boundary).sum()
+            union = (pred_boundary | target_boundary).sum()
+            boundary_iou_scores[cls] = intersection / (union + 1e-6)
+            
+        return boundary_iou_scores.mean()
