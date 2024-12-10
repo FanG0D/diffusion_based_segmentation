@@ -6,3 +6,5 @@
 
 2024年12月7日 trainer相关文件未修改完全
               数据集文件xxxx_dataset.py未编写（ade20k、city）
+
+2024年12月10日 config文件夹下的yaml记得修改
