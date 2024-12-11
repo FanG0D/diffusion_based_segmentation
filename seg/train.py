@@ -32,7 +32,7 @@ from omegaconf import OmegaConf
 from torch.utils.data import ConcatDataset, DataLoader
 from tqdm import tqdm
 
-from marigold.marigold_pipeline import MarigoldPipeline
+from diff_based_seg.diff_based_seg_pipeline import DiffBasedSegPipeline
 from src.dataset import BaseSegDataset, DatasetMode, get_dataset
 from src.dataset.mixed_sampler import MixedBatchSampler
 from src.trainer import get_trainer_cls
@@ -212,10 +212,11 @@ if "__main__" == __name__:
         logging.info(f"Code snapshot saved to: {_code_snapshot_path}")
 
     # -------------------- Copy data to local scratch (Slurm) --------------------
+    # 修改
     if is_on_slurm() and (not args.do_not_copy_data):
         # local scratch dir
         original_data_dir = base_data_dir
-        base_data_dir = os.path.join(get_local_scratch_dir(), "Marigold_data")
+        base_data_dir = os.path.join(get_local_scratch_dir(), "DiffBasedSeg_data")
         # copy data
         required_data_list = find_value_in_omegaconf("dir", cfg_data)
         # if cfg_train.visualize.init_latent_path is not None:
@@ -250,6 +251,7 @@ if "__main__" == __name__:
         loader_generator = torch.Generator().manual_seed(loader_seed)
 
     # Training dataset
+    
         # 不需要对分割数据进行归一化
         # depth_transform: DepthNormalizerBase = get_depth_normalizer( 
         #     cfg_normalizer=cfg.depth_normalization
@@ -324,7 +326,7 @@ if "__main__" == __name__:
 
     # -------------------- Model --------------------
     _pipeline_kwargs = cfg.pipeline.kwargs if cfg.pipeline.kwargs is not None else {}
-    model = MarigoldPipeline.from_pretrained(
+    model = DiffBasedSegPipeline.from_pretrained(
         os.path.join(base_ckpt_dir, cfg.model.pretrained_path), **_pipeline_kwargs
     )
 

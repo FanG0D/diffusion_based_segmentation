@@ -94,7 +94,7 @@ class BaseSegDataset(Dataset):
         # self.depth_transform: DepthNormalizerBase = depth_transform
         self.augm_args = augmentation_args
         self.resize_to_hw = resize_to_hw
-        self.rgb_transform = rgb_transform
+        self.rgb_transform = rgb_transform # 可以简单一点
         self.seg_transform = seg_transform
         self.move_invalid_to_far_plane = move_invalid_to_far_plane
 
@@ -162,16 +162,15 @@ class BaseSegDataset(Dataset):
         }
         return outputs
 
+    # 修改 ，通常分割的输入是annotation，需要我们上色转换为RGB
     def _load_seg_data(self, seg_rel_path):
         outputs = {}
-        # 读取RGB格式的分割图
-        seg_rgb = self._read_image(seg_rel_path)  # [H, W, 3]
-        seg_rgb_norm = seg_rgb / 255.0 * 2.0 - 1.0  #  [0, 255] -> [-1, 1]
 
-        outputs = {
-            "seg_rgb_int": torch.from_numpy(seg_rgb).int(),
-            "seg_rgb_norm": torch.from_numpy(seg_rgb_norm).float(),
-        }
+
+        # outputs = {
+        #     "seg_rgb_int": torch.from_numpy(seg_rgb).int(),
+        #     "seg_rgb_norm": torch.from_numpy(seg_rgb_norm).float(),
+        # }
         return outputs
 
     def _get_data_path(self, index):
@@ -223,21 +222,15 @@ class BaseSegDataset(Dataset):
         if self.augm_args is not None:
             rasters = self._augment_data(rasters)
 
-        # Normalization 这里可以把seg数据的归一化加入
+        # Normalization 这里可以把上色seg数据的归一化加入
         rasters["seg_rgb_norm"] = self.seg_transform(
             rasters["seg_rgb_int"]
         ).clone()
-
-        # # Set invalid pixel to far plane
-        # if self.move_invalid_to_far_plane:
-        #     if self.depth_transform.far_plane_at_max:
-        #         rasters["depth_filled_norm"][~rasters["valid_mask_filled"]] = (
-        #             self.depth_transform.norm_max
-        #         )
-        #     else:
-        #         rasters["depth_filled_norm"][~rasters["valid_mask_filled"]] = (
-        #             self.depth_transform.norm_min
-        #         )
+        
+        # type='Normalize',
+        #         mean=[123.675, 116.28, 103.53],
+        #         std=[58.395, 57.12, 57.375],
+        #         to_rgb=True
 
         # Resize
         if self.resize_to_hw is not None:
