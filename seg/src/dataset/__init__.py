@@ -24,12 +24,12 @@ import os
 
 from .base_seg_dataset import BaseSegDataset, get_pred_name, DatasetMode  # noqa: F401
 from .ade20k_dataset import ADE20KDataset
-from .cityscapes_dataset import CITYSCAPESDataset
+# from .cityscapes_dataset import CITYSCAPESDataset
 
 
 dataset_name_class_dict = { # ADE20K & CITYSCAPES
     "ade": ADE20KDataset,
-    "cityscapes": CITYSCAPESDataset, # 这两个代码的py文件需要自己写在src/dataset下
+    # "cityscapes": CITYSCAPESDataset, # 这两个代码的py文件需要自己写在src/dataset下
 }
 
 
