@@ -1,0 +1,13 @@
+# 修改数据集
+dataset:
+  train:
+    name: ade20k
+    prob_ls: [0.9, 0.1]
+    dataset_list:
+    - name: ade20k
+      disp_name: ade20k_train
+      dir: ade20k/ade20k_train.tar
+      filenames: data_split/ade20k/filename_list_train_filtered.txt
+      resize_to_hw:
+      - 480
+      - 640
