@@ -1,0 +1,4 @@
+name: ade20k
+disp_name: ade20k_train
+dir: ade20k/ade20k_train
+filenames: data_split/ade20k/filename_list_train_filtered.txt
