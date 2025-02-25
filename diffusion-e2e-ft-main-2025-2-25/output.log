@@ -1,0 +1,40 @@
+/root/miniconda3/envs/dbs/lib/python3.10/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda3/envs/dbs/lib/python3.10/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda3/envs/dbs/lib/python3.10/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda3/envs/dbs/lib/python3.10/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+02/25/2025 21:32:22 - INFO - __main__ - Distributed environment: MULTI_GPU  Backend: nccl
+Num processes: 2
+Process index: 1
+Local process index: 1
+Device: cuda:1
+
+Mixed precision type: no
+
+02/25/2025 21:32:22 - INFO - __main__ - Distributed environment: MULTI_GPU  Backend: nccl
+Num processes: 2
+Process index: 0
+Local process index: 0
+Device: cuda:0
+
+Mixed precision type: no
+
+{'thresholding', 'clip_sample_range', 'variance_type', 'sample_max_value', 'rescale_betas_zero_snr', 'dynamic_thresholding_ratio'} was not found in config. Values will be initialized to default values.
+{'scaling_factor', 'mid_block_add_attention', 'use_quant_conv', 'use_post_quant_conv', 'shift_factor', 'force_upcast', 'latents_std', 'latents_mean'} was not found in config. Values will be initialized to default values.
+{'time_cond_proj_dim', 'class_embed_type', 'only_cross_attention', 'attention_type', 'projection_class_embeddings_input_dim', 'num_attention_heads', 'conv_out_kernel', 'conv_in_kernel', 'class_embeddings_concat', 'num_class_embeds', 'transformer_layers_per_block', 'upcast_attention', 'cross_attention_norm', 'addition_embed_type_num_heads', 'timestep_post_act', 'reverse_transformer_layers_per_block', 'time_embedding_act_fn', 'mid_block_only_cross_attention', 'mid_block_type', 'addition_time_embed_dim', 'addition_embed_type', 'time_embedding_type', 'encoder_hid_dim_type', 'encoder_hid_dim', 'dropout', 'time_embedding_dim', 'resnet_skip_time_act', 'resnet_time_scale_shift', 'resnet_out_scale_factor'} was not found in config. Values will be initialized to default values.
+02/25/2025 21:32:24 - INFO - __main__ - Unet conv_in layer is replaced for RGB-depth or RGB-normals input
+02/25/2025 21:32:31 - INFO - __main__ - ***** Running training *****
+02/25/2025 21:32:31 - INFO - __main__ -   Num examples = 20195
+02/25/2025 21:32:31 - INFO - __main__ -   Num Epochs = 64
+02/25/2025 21:32:31 - INFO - __main__ -   Instantaneous batch size per device = 2
+02/25/2025 21:32:31 - INFO - __main__ -   Total train batch size (w. parallel, distributed & accumulation) = 64
+02/25/2025 21:32:31 - INFO - __main__ -   Gradient Accumulation steps = 16
+02/25/2025 21:32:31 - INFO - __main__ -   Total optimization steps = 20000
+Checkpoint 'latest' does not exist. Starting a new training run.
+Steps:   0%|          | 0/20000 [00:00<?, ?it/s]02/25/2025 21:32:31 - INFO - __main__ - At Epoch 0:
+Steps:   0%|          | 0/20000 [00:04<?, ?it/s, lr=0, step_loss=4.34]Steps:   0%|          | 0/20000 [00:06<?, ?it/s, lr=0, step_loss=3.7] Steps:   0%|          | 0/20000 [00:07<?, ?it/s, lr=0, step_loss=4.83]Steps:   0%|          | 0/20000 [00:09<?, ?it/s, lr=0, step_loss=3.84]Steps:   0%|          | 0/20000 [00:10<?, ?it/s, lr=0, step_loss=2.99]Steps:   0%|          | 0/20000 [00:12<?, ?it/s, lr=0, step_loss=3.86]Steps:   0%|          | 0/20000 [00:14<?, ?it/s, lr=0, step_loss=3.51]Steps:   0%|          | 0/20000 [00:16<?, ?it/s, lr=0, step_loss=3.46]Steps:   0%|          | 0/20000 [00:17<?, ?it/s, lr=0, step_loss=5.1] Steps:   0%|          | 0/20000 [00:19<?, ?it/s, lr=0, step_loss=4.11]Steps:   0%|          | 0/20000 [00:20<?, ?it/s, lr=0, step_loss=3.71]Steps:   0%|          | 0/20000 [00:22<?, ?it/s, lr=0, step_loss=2.49]Steps:   0%|          | 0/20000 [00:23<?, ?it/s, lr=0, step_loss=3.13]Steps:   0%|          | 0/20000 [00:25<?, ?it/s, lr=0, step_loss=3.29]Steps:   0%|          | 0/20000 [00:27<?, ?it/s, lr=0, step_loss=3.86]Steps:   0%|          | 1/20000 [00:29<163:24:25, 29.41s/it, lr=0, step_loss=3.86]Steps:   0%|          | 1/20000 [00:29<163:24:25, 29.41s/it, lr=3e-7, step_loss=2.93]02/25/2025 21:33:01 - INFO - torch.nn.parallel.distributed - Reducer buckets have been rebuilt in this iteration.
+02/25/2025 21:33:01 - INFO - torch.nn.parallel.distributed - Reducer buckets have been rebuilt in this iteration.
+Steps:   0%|          | 1/20000 [00:30<163:24:25, 29.41s/it, lr=3e-7, step_loss=4.18]Steps:   0%|          | 1/20000 [00:32<163:24:25, 29.41s/it, lr=3e-7, step_loss=3.98]Steps:   0%|          | 1/20000 [00:34<163:24:25, 29.41s/it, lr=3e-7, step_loss=4.1] Steps:   0%|          | 1/20000 [00:35<163:24:25, 29.41s/it, lr=3e-7, step_loss=2.97]
