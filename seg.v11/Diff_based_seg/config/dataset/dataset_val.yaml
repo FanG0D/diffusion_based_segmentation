@@ -1,0 +1,6 @@
+dataset:
+  val:
+  - name: ade20k
+    disp_name: ade20k_val
+    dir: ade20k/ade20k_val
+    filenames: data_split/ade20k/filename_list_val_filtered.txt
