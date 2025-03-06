@@ -1,0 +1,3 @@
+images/ADE_train_00000005.jpg annotations/ADE_train_00000005.png  (val)
+images/ADE_train_00016496.jpg annotations/ADE_train_00016496.png  (val)
+images/ADE_train_00006385.jpg annotations/ADE_train_00006385.png  (val)

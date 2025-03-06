@@ -1,0 +1,6 @@
+dataset:
+  vis:
+  - name: ade20k
+    disp_name: ade20k_vis
+    dir: ade20k/ade20k_vis
+    filenames: data_split/ade20k/selected_vis_sample.txt
